@@ -1,0 +1,26 @@
+{
+  "name": "Erata",
+  "short_name": "Erata",
+  "description": "Composer, producer and sound designer from Ankara. Discography, selected works, and Circle In The Flow.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#e9e8e3",
+  "theme_color": "#e9e8e3",
+  "icons": [
+    {
+      "src": "assets/img/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
