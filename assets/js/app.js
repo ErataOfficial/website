@@ -119,6 +119,128 @@
   renderClock();
   window.setInterval(renderClock, 30000);
 
+  /* ------------------------------------------------------------------------
+     Single logo: hero mark travels up and becomes the header mark
+     ------------------------------------------------------------------------ */
+
+  const brand = siteHead ? $(".brand", siteHead) : null;
+  const heroLogoBox = $("#hero-logo .hero-logo-mark");
+  const navLinks = siteHead ? $$(".site-nav a", siteHead) : [];
+  const LOGO_ASPECT = 1346 / 1744;
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (v) => Math.min(1, Math.max(0, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  const morph = { ready: false, docY: 0, x0: 0, h0: 0, baseW: 0, baseH: 0, s0: 1, s1: 1, endY: 0, range: 1, links: [] };
+  let docked = false;
+
+  function cssPx(name) {
+    const probe = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    return Number.isFinite(probe) ? probe : 0;
+  }
+
+  function measureBrandMorph() {
+    if (!brand || !heroLogoBox || !document.documentElement.classList.contains("js")) return;
+
+    const head = cssPx("--head");
+    const navArea = cssPx("--nav-area");
+    const endH = cssPx("--logo-height") || 64;
+
+    // Hero placeholder: layout position without transforms (reveal animations ignored)
+    let docY = 0;
+    for (let node = heroLogoBox; node; node = node.offsetParent) docY += node.offsetTop;
+    const boxW = heroLogoBox.offsetWidth;
+    const boxH = heroLogoBox.offsetHeight;
+    if (!boxW || !boxH) return;
+
+    const h0 = Math.min(boxH, boxW / LOGO_ASPECT);
+    const baseH = Math.max(h0, endH);
+
+    morph.h0 = h0;
+    morph.baseH = baseH;
+    morph.baseW = baseH * LOGO_ASPECT;
+    morph.s0 = h0 / baseH;
+    morph.s1 = endH / baseH;
+    morph.docY = docY + boxH / 2;
+    morph.x0 = heroLogoBox.getBoundingClientRect().left + boxW / 2;
+    morph.endY = (head - navArea) / 2;
+    // The hand-off finishes exactly when the hero's bottom edge (the ticker)
+    // has risen to just under the bar: the logo is fully docked in that frame.
+    let tickerTop = 0;
+    const tickerEl = document.querySelector(".ticker");
+    for (let node = tickerEl; node; node = node.offsetParent) tickerTop += node.offsetTop;
+    const DOCK_GAP = 57; // px between the bar's bottom edge and the ticker at completion
+    morph.range = Math.max(1, morph.docY - morph.endY, tickerTop - head - DOCK_GAP);
+    morph.head = head;
+    morph.headMin = cssPx("--head-min");
+    morph.navArea = navArea;
+
+    brand.style.setProperty("--bw", `${morph.baseW.toFixed(2)}px`);
+    brand.style.setProperty("--bh", `${morph.baseH.toFixed(2)}px`);
+
+    morph.links = navLinks.map((link) => {
+      const r = link.getBoundingClientRect();
+      return { el: link, cx: r.left + r.width / 2, w: r.width, h: r.height };
+    });
+
+    morph.ready = true;
+  }
+
+  function updateBrandMorph(scrollTop) {
+    if (!morph.ready) return;
+
+    // Linear in scroll so the logo stays glued to the page, eased for size and bar
+    const p = clamp01(scrollTop / morph.range);
+    const e = easeInOut(p);
+
+    const scale = lerp(morph.s0, morph.s1, e);
+    const x = lerp(morph.x0, siteHead.clientWidth / 2, p);
+    const y = lerp(morph.docY, morph.endY, p);
+
+    // Docked: render at the real bar size with whole-pixel placement (crisp);
+    // otherwise keep the big box and shrink it with a transform while it travels.
+    const dockedNow = p >= 0.985;
+    if (dockedNow) {
+      const endW = morph.baseW * morph.s1;
+      const endH = morph.baseH * morph.s1;
+      const dpr = window.devicePixelRatio || 1;
+      const snap = (v) => Math.round(v * dpr) / dpr;
+      brand.style.width = `${endW.toFixed(2)}px`;
+      brand.style.height = `${endH.toFixed(2)}px`;
+      brand.style.transform =
+        `translate3d(${snap(siteHead.clientWidth / 2 - endW / 2)}px, ${snap(morph.endY - endH / 2)}px, 0)`;
+    } else {
+      brand.style.width = "";
+      brand.style.height = "";
+      brand.style.transform =
+        `translate3d(${(x - morph.baseW / 2).toFixed(2)}px, ${(y - morph.baseH / 2).toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+    }
+
+    siteHead.style.setProperty("--e", e.toFixed(4));
+    siteHead.style.setProperty("--bar", clamp01((p - 0.1) / 0.6).toFixed(3));
+
+    const isDocked = p >= 0.985;
+    if (isDocked !== docked) {
+      docked = isDocked;
+      siteHead.classList.toggle("is-docked", docked);
+      brand.setAttribute("tabindex", docked ? "0" : "-1");
+    }
+
+    // The logo passes over the nav on its way up: dim only the links it covers
+    const navY = morph.headMin / 2 + (morph.head - morph.navArea / 2 - morph.headMin / 2) * e;
+    const logoHalfH = (morph.baseH * scale) / 2;
+    const logoHalfW = (morph.baseW * scale) / 2;
+    const dy = Math.abs(y - navY);
+    morph.links.forEach((l) => {
+      const fy = clamp01((logoHalfH + l.h / 2 - dy + 4) / 10);
+      const dx = Math.abs(l.cx - x) - (l.w / 2 + logoHalfW);
+      const fx = clamp01(1 - dx / 18);
+      l.el.style.setProperty("--l", (1 - fx * fy).toFixed(3));
+    });
+  }
+
+  if (brand) brand.setAttribute("tabindex", "-1");
+
   const progressFill = $("#page-progress-fill");
   let scrollTicking = false;
 
@@ -132,19 +254,13 @@
 
     if (siteHead) {
       siteHead.classList.toggle("is-scrolled", scrollTop > 18);
-
-      // Header logo fades/slides in gradually as the hero logo scrolls away
-      const logoStart = 24;
-      const logoRange = Math.max(window.innerHeight * 0.45, 200);
-      const logoP = Math.min(1, Math.max(0, (scrollTop - logoStart) / logoRange));
-      siteHead.style.setProperty("--logo-p", logoP.toFixed(3));
-      siteHead.classList.toggle("is-logo-hidden", logoP < 0.01);
+      updateBrandMorph(scrollTop);
 
       const probe = 36;
       const darkSections = $$("[data-header-theme='dark'], .site-footer");
       const overDark = darkSections.some((section) => {
         const rect = section.getBoundingClientRect();
-        return rect.top <= probe && rect.bottom >= probe;
+        return rect.top <= probe + 0.5 && rect.bottom >= probe - 0.5;
       });
       siteHead.classList.toggle("is-dark", overDark);
     }
@@ -159,9 +275,26 @@
     }
   }
 
+  function remeasure() {
+    measureBrandMorph();
+    onScroll();
+  }
+
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll);
+  window.addEventListener("resize", remeasure);
+  window.addEventListener("load", remeasure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
+  if (window.ResizeObserver && heroLogoBox) new ResizeObserver(remeasure).observe(heroLogoBox);
+
+  measureBrandMorph();
   updateScrollUI();
+  if (siteHead) {
+    // Fade-in starts immediately; the mask image is preloaded in <head>.
+    window.requestAnimationFrame(() => siteHead.classList.add("is-ready"));
+    // Warm the small docked mask for this screen density so the swap has no flicker.
+    const dprN = window.devicePixelRatio || 1;
+    new Image().src = `assets/img/logo-mark-${dprN >= 2.5 ? 192 : dprN >= 1.5 ? 128 : 64}.png`;
+  }
 
   /* ------------------------------------------------------------------------
      Reveal on scroll
@@ -758,7 +891,7 @@
 
   /* Add the section scroll offset after layout is known. */
   function setScrollOffsets() {
-    const offset = siteHead ? siteHead.offsetHeight : 72;
+    const offset = siteHead ? cssPx("--head") || siteHead.offsetHeight : 72;
     $$("main > section, #top").forEach((section) => {
       section.style.scrollMarginTop = `${offset + 16}px`;
     });
@@ -766,6 +899,44 @@
 
   setScrollOffsets();
   window.addEventListener("resize", setScrollOffsets);
+
+  /* Ticker: repeat the set until the track is always wider than the viewport,
+     then slide by exactly one set so the loop never shows a gap. */
+  const tickerTrack = $(".ticker-track");
+  const TICKER_SPEED = 35; /* px per second */
+
+  function buildTicker() {
+    if (!tickerTrack) return;
+    const base = $(".ticker-set", tickerTrack);
+    if (!base) return;
+
+    $$("[data-ticker-clone]", tickerTrack).forEach((node) => node.remove());
+
+    const setWidth = base.getBoundingClientRect().width;
+    if (!setWidth) return;
+
+    const copies = Math.ceil(window.innerWidth / setWidth) + 1;
+    for (let i = 1; i < copies; i += 1) {
+      const clone = base.cloneNode(true);
+      clone.setAttribute("data-ticker-clone", "");
+      tickerTrack.appendChild(clone);
+    }
+
+    tickerTrack.style.setProperty("--ticker-shift", `-${setWidth}px`);
+    tickerTrack.style.setProperty("--ticker-duration", `${(setWidth / TICKER_SPEED).toFixed(2)}s`);
+  }
+
+  buildTicker();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(buildTicker);
+  }
+  window.addEventListener("load", buildTicker);
+
+  let tickerResizeTimer;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(tickerResizeTimer);
+    tickerResizeTimer = window.setTimeout(buildTicker, 150);
+  });
 
   /* Remove the initial js flag after the first paint if needed for CSS-only
      fallbacks. Kept intentionally: the reveal classes are only hidden when

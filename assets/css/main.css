@@ -23,6 +23,8 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --head: 108px;
+  --head-min: 56px;
+  --nav-area: 36px;
   --logo-height: 64px;
   --logo-width: 49px;
   --ticker-h: 40px;
@@ -383,21 +385,29 @@ ol {
   padding: 0 var(--gutter);
   border-bottom: 1px solid transparent;
   color: var(--ink);
-  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
-.site-head.is-scrolled {
-  border-color: var(--line);
+/* Bar background lives on its own layer so it can fade in with the scroll */
+.site-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-bottom: 1px solid var(--line);
   background: rgba(233, 232, 227, 0.9);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
+  opacity: var(--bar, 0);
+  pointer-events: none;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .site-head.is-dark {
   color: var(--paper);
 }
 
-.site-head.is-dark.is-scrolled {
+.site-head.is-dark::before {
   border-color: var(--paper-line);
   background: rgba(11, 11, 10, 0.8);
 }
@@ -412,16 +422,6 @@ ol {
 .site-head .brand {
   gap: 0;
   line-height: 0;
-  /* Hidden on first load; --logo-p (0 to 1) is driven by scroll position */
-  opacity: var(--logo-p, 0);
-  transform: translateY(calc((1 - var(--logo-p, 0)) * -18px)) scale(calc(0.82 + 0.18 * var(--logo-p, 0)));
-  transform-origin: 50% 0;
-  will-change: opacity, transform;
-}
-
-.site-head.is-logo-hidden .brand {
-  visibility: hidden;
-  pointer-events: none;
 }
 
 .brand-mark {
@@ -437,6 +437,80 @@ ol {
 
 .brand:hover .brand-mark {
   transform: scale(1.04);
+}
+
+/* Scroll-driven single logo ----------------------------------------------------
+   One logo only: it starts as the big hero mark and travels up into the bar.
+   app.js sets --e (0 to 1, eased scroll progress), --bar, and the logo's
+   transform. The hero keeps an invisible placeholder so layout does not move. */
+
+.js .site-head {
+  display: block;
+  height: calc(var(--head-min) + (var(--head) - var(--head-min)) * var(--e, 0));
+  padding: 0;
+}
+
+.js .site-head .brand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: block;
+  width: var(--bw, 49px);
+  height: var(--bh, 64px);
+  opacity: 0;
+  filter: blur(14px);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  will-change: transform;
+  /* Slow entrance: the logo materialises out of nothing, soft to sharp. */
+  transition: opacity 1.6s cubic-bezier(0.33, 0, 0.2, 1),
+              filter 1.6s cubic-bezier(0.33, 0, 0.2, 1);
+}
+
+.js .site-head.is-ready .brand {
+  opacity: 1;
+  filter: none;
+}
+
+/* Docked in the bar: drawn at its real size from a pre-filtered mask, so the
+   edges stay crisp instead of being a huge bitmap shrunk by transform. */
+.js .site-head.is-docked .brand {
+  will-change: auto;
+}
+
+.js .site-head.is-docked .brand-mark {
+  -webkit-mask-image: url("../img/logo-mark-64.png");
+  mask-image: url("../img/logo-mark-64.png");
+  -webkit-mask-image: -webkit-image-set(url("../img/logo-mark-64.png") 1x, url("../img/logo-mark-128.png") 2x, url("../img/logo-mark-192.png") 3x);
+  mask-image: image-set(url("../img/logo-mark-64.png") 1x, url("../img/logo-mark-128.png") 2x, url("../img/logo-mark-192.png") 3x);
+}
+
+.js .site-head.is-docked .brand {
+  pointer-events: auto;
+}
+
+.js .site-head .brand-mark {
+  width: 100%;
+  height: 100%;
+}
+
+.js .hero-logo-mark {
+  visibility: hidden;
+}
+
+.js .site-nav {
+  position: absolute;
+  top: calc(var(--head-min) / 2 + (var(--head) - var(--nav-area) / 2 - var(--head-min) / 2) * var(--e, 0));
+  right: 0;
+  left: 0;
+  z-index: 1;
+  justify-content: center;
+  transform: translateY(-50%);
+}
+
+.js .site-nav a {
+  opacity: var(--l, 1);
 }
 
 .brand-word {
@@ -504,7 +578,7 @@ ol {
   flex-direction: column;
   min-height: calc(100vh - var(--ticker-h));
   min-height: calc(100svh - var(--ticker-h));
-  padding: calc(var(--head) + clamp(1.25rem, 3vw, 2.5rem)) var(--gutter) 1.25rem;
+  padding: calc(var(--head-min) + clamp(1.25rem, 3vw, 2.5rem)) var(--gutter) 1.25rem;
   position: relative;
   isolation: isolate;
   color: var(--paper);
@@ -746,7 +820,13 @@ ol {
 .ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker 42s linear infinite;
+  animation: ticker var(--ticker-duration, 42s) linear infinite;
+  will-change: transform;
+}
+
+.ticker-set {
+  display: flex;
+  flex-shrink: 0;
 }
 
 .ticker-track span {
@@ -1837,6 +1917,7 @@ body.has-player .site-footer {
 }
 
 .footer-line {
+  text-align: center;
   color: var(--paper-muted);
   font-size: 0.82rem;
   line-height: 1.45;
@@ -2099,7 +2180,7 @@ body.has-player .site-footer {
 
 @keyframes ticker {
   to {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(var(--ticker-shift, -50%), 0, 0);
   }
 }
 
@@ -2281,7 +2362,7 @@ body.has-player .site-footer {
   .hero {
     min-height: calc(100vh - var(--ticker-h));
     min-height: calc(100svh - var(--ticker-h));
-    padding-top: calc(var(--head) + 1.4rem);
+    padding-top: calc(var(--head-min) + 1.4rem);
   }
 
   .hero-logo {
@@ -2571,6 +2652,8 @@ body.has-player .site-footer {
 @media (max-width: 620px) {
   :root {
     --head: 86px;
+    --head-min: 48px;
+    --nav-area: 32px;
     --logo-height: 46px;
     --logo-width: 35px;
   }
@@ -2841,5 +2924,9 @@ html.no-js .site-head {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-head .brand { will-change: auto; }
+  .js .site-head .brand {
+    will-change: auto;
+    filter: none;
+    transition: opacity 0.6s ease;
+  }
 }
