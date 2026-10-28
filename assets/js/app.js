@@ -243,13 +243,16 @@
 
   const progressFill = $("#page-progress-fill");
   let scrollTicking = false;
+  const darkSections = $$("[data-header-theme='dark'], .site-footer");
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  let lastTheme = "";
 
   function updateScrollUI() {
     const scrollTop = window.scrollY || window.pageYOffset;
     const scrollable = document.documentElement.scrollHeight - window.innerHeight;
 
     if (progressFill) {
-      progressFill.style.width = scrollable > 0 ? `${(scrollTop / scrollable) * 100}%` : "0%";
+      progressFill.style.transform = `scaleX(${scrollable > 0 ? clamp01(scrollTop / scrollable).toFixed(4) : 0})`;
     }
 
     if (siteHead) {
@@ -257,12 +260,18 @@
       updateBrandMorph(scrollTop);
 
       const probe = 36;
-      const darkSections = $$("[data-header-theme='dark'], .site-footer");
       const overDark = darkSections.some((section) => {
         const rect = section.getBoundingClientRect();
         return rect.top <= probe + 0.5 && rect.bottom >= probe - 0.5;
       });
       siteHead.classList.toggle("is-dark", overDark);
+
+      // Keep Safari's status-bar tint in step with what is under it.
+      const theme = overDark ? "#0b0b0a" : "#e9e8e3";
+      if (themeMeta && theme !== lastTheme) {
+        lastTheme = theme;
+        themeMeta.setAttribute("content", theme);
+      }
     }
 
     scrollTicking = false;
@@ -281,7 +290,17 @@
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", remeasure);
+  // iOS Safari fires "resize" whenever the toolbar collapses while scrolling
+  // (height only). Re-measuring then forces layout mid-scroll, so only react
+  // to real width changes such as rotation.
+  let lastWidth = window.innerWidth;
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(remeasure, 120);
+  });
   window.addEventListener("load", remeasure);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
   if (window.ResizeObserver && heroLogoBox) new ResizeObserver(remeasure).observe(heroLogoBox);
@@ -293,7 +312,9 @@
     window.requestAnimationFrame(() => siteHead.classList.add("is-ready"));
     // Warm the small docked mask for this screen density so the swap has no flicker.
     const dprN = window.devicePixelRatio || 1;
-    new Image().src = `assets/img/logo-mark-${dprN >= 2.5 ? 192 : dprN >= 1.5 ? 128 : 64}.png`;
+    const warm = dprN >= 2.5 ? 192 : dprN >= 1.5 ? 128 : 64;
+    new Image().src = `assets/img/logo-ink-${warm}.png`;
+    new Image().src = `assets/img/logo-paper-${warm}.png`;
   }
 
   /* ------------------------------------------------------------------------
