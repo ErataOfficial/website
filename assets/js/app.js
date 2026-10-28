@@ -133,6 +133,27 @@
 
   const morph = { ready: false, docY: 0, x0: 0, h0: 0, baseW: 0, baseH: 0, s0: 1, s1: 1, endY: 0, range: 1, links: [] };
   let docked = false;
+  let lastP = -1;
+  let headW = 0;
+  let darkRanges = [];
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  let themeIsDark = null;
+
+  function setThemeColor(dark) {
+    if (!themeMeta || dark === themeIsDark) return;
+    themeIsDark = dark;
+    themeMeta.setAttribute("content", dark ? "#0b0b0a" : "#e9e8e3");
+  }
+
+  // Dark section positions in document coordinates, measured once (not per frame).
+  function measureDarkRanges() {
+    const y = window.scrollY || window.pageYOffset;
+    headW = siteHead ? siteHead.clientWidth : 0;
+    darkRanges = $$("[data-header-theme='dark'], .site-footer").map((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top + y, bottom: r.bottom + y };
+    });
+  }
 
   function cssPx(name) {
     const probe = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
@@ -140,6 +161,8 @@
   }
 
   function measureBrandMorph() {
+    measureDarkRanges();
+    lastP = -1;
     if (!brand || !heroLogoBox || !document.documentElement.classList.contains("js")) return;
 
     const head = cssPx("--head");
@@ -191,10 +214,13 @@
 
     // Linear in scroll so the logo stays glued to the page, eased for size and bar
     const p = clamp01(scrollTop / morph.range);
+    // Once the logo is docked and the page keeps scrolling, nothing changes.
+    if (p === 1 && lastP === 1) return;
+    lastP = p;
     const e = easeInOut(p);
 
     const scale = lerp(morph.s0, morph.s1, e);
-    const x = lerp(morph.x0, siteHead.clientWidth / 2, p);
+    const x = lerp(morph.x0, headW / 2, p);
     const y = lerp(morph.docY, morph.endY, p);
 
     // Docked: render at the real bar size with whole-pixel placement (crisp);
@@ -208,7 +234,7 @@
       brand.style.width = `${endW.toFixed(2)}px`;
       brand.style.height = `${endH.toFixed(2)}px`;
       brand.style.transform =
-        `translate3d(${snap(siteHead.clientWidth / 2 - endW / 2)}px, ${snap(morph.endY - endH / 2)}px, 0)`;
+        `translate3d(${snap(headW / 2 - endW / 2)}px, ${snap(morph.endY - endH / 2)}px, 0)`;
     } else {
       brand.style.width = "";
       brand.style.height = "";
@@ -228,6 +254,7 @@
 
     // The logo passes over the nav on its way up: dim only the links it covers
     const navY = morph.headMin / 2 + (morph.head - morph.navArea / 2 - morph.headMin / 2) * e;
+    siteHead.style.setProperty("--ny", `${navY.toFixed(2)}px`);
     const logoHalfH = (morph.baseH * scale) / 2;
     const logoHalfW = (morph.baseW * scale) / 2;
     const dy = Math.abs(y - navY);
@@ -235,7 +262,11 @@
       const fy = clamp01((logoHalfH + l.h / 2 - dy + 4) / 10);
       const dx = Math.abs(l.cx - x) - (l.w / 2 + logoHalfW);
       const fx = clamp01(1 - dx / 18);
-      l.el.style.setProperty("--l", (1 - fx * fy).toFixed(3));
+      const v = (1 - fx * fy).toFixed(2);
+      if (v !== l.v) {
+        l.v = v;
+        l.el.style.setProperty("--l", v);
+      }
     });
   }
 
@@ -243,9 +274,6 @@
 
   const progressFill = $("#page-progress-fill");
   let scrollTicking = false;
-  const darkSections = $$("[data-header-theme='dark'], .site-footer");
-  const themeMeta = document.querySelector('meta[name="theme-color"]');
-  let lastTheme = "";
 
   function updateScrollUI() {
     const scrollTop = window.scrollY || window.pageYOffset;
@@ -259,19 +287,10 @@
       siteHead.classList.toggle("is-scrolled", scrollTop > 18);
       updateBrandMorph(scrollTop);
 
-      const probe = 36;
-      const overDark = darkSections.some((section) => {
-        const rect = section.getBoundingClientRect();
-        return rect.top <= probe + 0.5 && rect.bottom >= probe - 0.5;
-      });
+      const probe = scrollTop + 36;
+      const overDark = darkRanges.some((r) => r.top <= probe + 0.5 && r.bottom >= probe - 0.5);
       siteHead.classList.toggle("is-dark", overDark);
-
-      // Keep Safari's status-bar tint in step with what is under it.
-      const theme = overDark ? "#0b0b0a" : "#e9e8e3";
-      if (themeMeta && theme !== lastTheme) {
-        lastTheme = theme;
-        themeMeta.setAttribute("content", theme);
-      }
+      setThemeColor(overDark);
     }
 
     scrollTicking = false;
@@ -290,20 +309,23 @@
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
-  // iOS Safari fires "resize" whenever the toolbar collapses while scrolling
-  // (height only). Re-measuring then forces layout mid-scroll, so only react
-  // to real width changes such as rotation.
-  let lastWidth = window.innerWidth;
-  let resizeTimer = 0;
-  window.addEventListener("resize", () => {
-    if (window.innerWidth === lastWidth) return;
-    lastWidth = window.innerWidth;
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(remeasure, 120);
-  });
+  window.addEventListener("resize", remeasure);
   window.addEventListener("load", remeasure);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
-  if (window.ResizeObserver && heroLogoBox) new ResizeObserver(remeasure).observe(heroLogoBox);
+  let remeasureQueued = false;
+  function queueRemeasure() {
+    if (remeasureQueued) return;
+    remeasureQueued = true;
+    window.requestAnimationFrame(() => {
+      remeasureQueued = false;
+      remeasure();
+    });
+  }
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(queueRemeasure);
+    if (heroLogoBox) ro.observe(heroLogoBox);
+    ro.observe(document.body);
+  }
 
   measureBrandMorph();
   updateScrollUI();
@@ -312,9 +334,11 @@
     window.requestAnimationFrame(() => siteHead.classList.add("is-ready"));
     // Warm the small docked mask for this screen density so the swap has no flicker.
     const dprN = window.devicePixelRatio || 1;
-    const warm = dprN >= 2.5 ? 192 : dprN >= 1.5 ? 128 : 64;
-    new Image().src = `assets/img/logo-ink-${warm}.png`;
-    new Image().src = `assets/img/logo-paper-${warm}.png`;
+    const warmSize = dprN >= 2.5 ? 192 : dprN >= 1.5 ? 128 : 64;
+    ["ink", "paper"].forEach((tone) => {
+      new Image().src = `assets/img/logo-${tone}-${warmSize}.png`;
+    });
+    new Image().src = "assets/img/logo-ink.png";
   }
 
   /* ------------------------------------------------------------------------

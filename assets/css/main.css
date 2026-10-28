@@ -41,8 +41,8 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  /* Dark canvas: iOS Safari shows this colour in the overscroll area and
-     behind the status bar. Hero and footer are dark, so no light strip. */
+  /* Matches the dark hero/footer so Safari's top (Dynamic Island) and
+     overscroll areas never flash light. */
   background: #0b0b0a;
 }
 
@@ -401,7 +401,9 @@ ol {
   inset: 0;
   z-index: 0;
   border-bottom: 1px solid var(--line);
-  background: rgba(233, 232, 227, 0.96);
+  background: rgba(233, 232, 227, 0.9);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
   opacity: var(--bar, 0);
   pointer-events: none;
   transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -413,7 +415,7 @@ ol {
 
 .site-head.is-dark::before {
   border-color: var(--paper-line);
-  background: rgba(11, 11, 10, 0.94);
+  background: rgba(11, 11, 10, 0.8);
 }
 
 .brand {
@@ -450,8 +452,27 @@ ol {
 
 .js .site-head {
   display: block;
-  height: calc(var(--head-min) + (var(--head) - var(--head-min)) * var(--e, 0));
+  /* Fixed height: the bar's visual height is animated with a transform on
+     ::before, so scrolling never triggers layout. */
+  height: var(--head);
   padding: 0;
+  pointer-events: none;
+}
+
+.js .site-head::before {
+  inset: 0 0 auto;
+  height: var(--head);
+  transform: translate3d(0, calc((var(--e, 0) - 1) * (var(--head) - var(--head-min))), 0);
+  will-change: transform, opacity;
+  /* No backdrop blur while the bar is moving and fading (Safari repaints it
+     every frame); it is switched on once the logo is docked. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.js .site-head.is-docked::before {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .js .site-head .brand {
@@ -463,67 +484,22 @@ ol {
   width: var(--bw, 49px);
   height: var(--bh, 64px);
   opacity: 0;
+  filter: blur(14px);
   transform-origin: 50% 50%;
   pointer-events: none;
   will-change: transform;
   /* Slow entrance: the logo materialises out of nothing, soft to sharp. */
-  transition: opacity 1.6s cubic-bezier(0.33, 0, 0.2, 1);
+  transition: opacity 1.6s cubic-bezier(0.33, 0, 0.2, 1),
+              filter 1.6s cubic-bezier(0.33, 0, 0.2, 1);
 }
 
 .js .site-head.is-ready .brand {
   opacity: 1;
+  filter: none;
 }
 
-/* Header logo: pre-coloured bitmaps (ink + paper) cross-faded with opacity.
-   No CSS mask here, because mask + transform forces Safari to re-rasterise
-   the logo on every scroll frame. Transform and opacity stay on the GPU. */
-.js .site-head .brand-mark {
-  position: relative;
-  background: none;
-  -webkit-mask: none;
-  mask: none;
-}
-
-.js .site-head .brand-mark::before,
-.js .site-head .brand-mark::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: center / contain no-repeat;
-  transition: opacity 0.3s ease;
-}
-
-.js .site-head .brand-mark::before {
-  background-image: url("../img/logo-ink-600.png");
-  opacity: 1;
-}
-
-.js .site-head .brand-mark::after {
-  background-image: url("../img/logo-paper-600.png");
-  opacity: 0;
-}
-
-.js .site-head.is-dark .brand-mark::before { opacity: 0; }
-.js .site-head.is-dark .brand-mark::after { opacity: 1; }
-
-/* Docked: drawn at its real size from small pre-filtered bitmaps (crisp). */
 .js .site-head.is-docked .brand {
   will-change: auto;
-}
-
-.js .site-head.is-docked .brand-mark::before {
-  background-image: url("../img/logo-ink-64.png");
-  background-image: -webkit-image-set(url("../img/logo-ink-64.png") 1x, url("../img/logo-ink-128.png") 2x, url("../img/logo-ink-192.png") 3x);
-  background-image: image-set(url("../img/logo-ink-64.png") 1x, url("../img/logo-ink-128.png") 2x, url("../img/logo-ink-192.png") 3x);
-}
-
-.js .site-head.is-docked .brand-mark::after {
-  background-image: url("../img/logo-paper-64.png");
-  background-image: -webkit-image-set(url("../img/logo-paper-64.png") 1x, url("../img/logo-paper-128.png") 2x, url("../img/logo-paper-192.png") 3x);
-  background-image: image-set(url("../img/logo-paper-64.png") 1x, url("../img/logo-paper-128.png") 2x, url("../img/logo-paper-192.png") 3x);
-}
-
-.js .site-head.is-docked .brand {
   pointer-events: auto;
 }
 
@@ -532,22 +508,66 @@ ol {
   height: 100%;
 }
 
+/* Header logo: two pre-coloured bitmaps cross-faded by opacity. A CSS mask on a
+   transformed element is re-rasterised every frame in Safari; plain images are
+   just composited. */
+.brand-mark--img {
+  position: relative;
+  display: block;
+}
+
+.bm {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: center / contain no-repeat;
+  transition: opacity 0.3s ease;
+}
+
+.bm--ink {
+  background-image: url("../img/logo-ink.png");
+  opacity: 1;
+}
+
+.bm--paper {
+  background-image: url("../img/logo-paper.png");
+  opacity: 0;
+}
+
+.site-head.is-dark .bm--ink { opacity: 0; }
+.site-head.is-dark .bm--paper { opacity: 1; }
+
+/* Docked: real-size pre-filtered bitmaps, crisp edges. */
+.js .site-head.is-docked .bm--ink {
+  background-image: url("../img/logo-ink-64.png");
+  background-image: -webkit-image-set(url("../img/logo-ink-64.png") 1x, url("../img/logo-ink-128.png") 2x, url("../img/logo-ink-192.png") 3x);
+  background-image: image-set(url("../img/logo-ink-64.png") 1x, url("../img/logo-ink-128.png") 2x, url("../img/logo-ink-192.png") 3x);
+}
+
+.js .site-head.is-docked .bm--paper {
+  background-image: url("../img/logo-paper-64.png");
+  background-image: -webkit-image-set(url("../img/logo-paper-64.png") 1x, url("../img/logo-paper-128.png") 2x, url("../img/logo-paper-192.png") 3x);
+  background-image: image-set(url("../img/logo-paper-64.png") 1x, url("../img/logo-paper-128.png") 2x, url("../img/logo-paper-192.png") 3x);
+}
+
 .js .hero-logo-mark {
   visibility: hidden;
 }
 
 .js .site-nav {
   position: absolute;
-  top: calc(var(--head-min) / 2 + (var(--head) - var(--nav-area) / 2 - var(--head-min) / 2) * var(--e, 0));
+  top: 0;
   right: 0;
   left: 0;
   z-index: 1;
   justify-content: center;
-  transform: translateY(-50%);
+  pointer-events: none;
+  transform: translate3d(0, var(--ny, calc(var(--head-min) / 2)), 0) translateY(-50%);
 }
 
 .js .site-nav a {
   opacity: var(--l, 1);
+  pointer-events: auto;
 }
 
 .brand-word {
