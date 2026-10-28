@@ -3,7 +3,7 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://w.soundcloud.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i1.sndcdn.com https://i2.sndcdn.com https://i3.sndcdn.com https://i4.sndcdn.com; font-src 'self'; frame-src https://w.soundcloud.com; connect-src 'self' https://api-widget.soundcloud.com https://api-v2.soundcloud.com; media-src https://*.sndcdn.com https://*.soundcloud.cloud; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://w.soundcloud.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i1.sndcdn.com https://i2.sndcdn.com https://i3.sndcdn.com https://i4.sndcdn.com; font-src 'self'; frame-src https://w.soundcloud.com; connect-src 'self' https://api-widget.soundcloud.com https://api-v2.soundcloud.com https://cloudflareinsights.com; media-src https://*.sndcdn.com https://*.soundcloud.cloud; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
   Cache-Control: public, max-age=0, must-revalidate
 
 /assets/*
