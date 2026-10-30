@@ -164,8 +164,12 @@
   const languages = navigator.languages && navigator.languages.length
     ? navigator.languages
     : [navigator.language || "en"];
+  /* The 29.10 section stays in English for every visitor. Set this to true to
+     bring back automatic translation by browser language (texts above are kept). */
+  const AUTO_TRANSLATE = false;
+
   let code = "en";
-  for (const tag of languages) {
+  for (const tag of AUTO_TRANSLATE ? languages : []) {
     const base = String(tag).toLowerCase().split("-")[0];
     if (TEXT[base]) {
       code = base;

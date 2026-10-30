@@ -3337,3 +3337,24 @@ html.no-js .site-head {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(0, var(--tile), 0); }
 }
+
+/* Thin flag-red bars closing the 29.10 section at top and bottom, joining the rails */
+.republic::before,
+.republic::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: 3px;
+  background: #e30a17;
+  pointer-events: none;
+}
+
+.republic::before {
+  top: 0;
+}
+
+.republic::after {
+  bottom: 0;
+}
