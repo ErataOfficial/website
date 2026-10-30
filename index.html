@@ -41,7 +41,7 @@
   <link rel="preload" href="assets/fonts/inter-tight-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/instrument-serif-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/fonts/fonts.css">
-  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/main.css?v=20261030b">
 
   <script type="application/ld+json">
   {
@@ -90,11 +90,12 @@
   <header class="site-head" id="site-head">
     <a class="brand" href="#top" aria-label="Erata, back to top">
       <span class="brand-mark brand-mark--img" aria-hidden="true"><i class="bm bm--ink"></i><i class="bm bm--paper"></i></span>
+      <span class="flag" id="flag-tr" hidden></span>
     </a>
 
     <nav class="site-nav" aria-label="Primary">
       <a href="#listen">Listen</a>
-      <a href="#works">Works</a>
+      <a href="#republic">29.10</a>
       <a href="#index">Index</a>
       <a href="#world">World</a>
       <a href="#contact">Contact</a>
@@ -253,76 +254,42 @@
       </div>
     </section>
 
-    <section class="section works" id="works" aria-labelledby="works-title">
+    <section class="section republic" id="republic" aria-labelledby="republic-title">
+      <div class="republic-rail republic-rail--l" aria-hidden="true"><div class="rail-track"></div></div>
+      <div class="republic-rail republic-rail--r" aria-hidden="true"><div class="rail-track"></div></div>
       <div class="section-inner">
         <header class="section-head">
-          <p class="eyebrow reveal" data-reveal><span>02</span> Portfolio</p>
-          <h2 class="section-title reveal" id="works-title" data-reveal style="--delay: .04s">Selected <em>works.</em></h2>
-          <p class="section-note reveal" data-reveal style="--delay: .08s">
-            Remixes, records and collaborations. A wider frame around the catalogue, 2023 to 2026.
-          </p>
+          <p class="eyebrow reveal" data-reveal><span>02</span> <strong class="republic-kicker" data-rp="kicker">29 October / Republic Day</strong></p>
+          <h2 class="section-title reveal" id="republic-title" data-reveal style="--delay: .04s" data-rp="title">Why 29 October <em>matters.</em></h2>
+          <p class="section-note reveal" data-reveal style="--delay: .08s">Ankara, 29.10.1923</p>
         </header>
 
-        <div class="works-grid">
-          <a class="work reveal" data-reveal href="https://soundcloud.com/erataofficial/mefjus-zenith-ft-flowanastasia-erata-remix" target="_blank" rel="noopener">
-            <div class="work-media">
-              <img src="assets/img/covers/zenith-900.webp" width="900" height="900" alt="Cover artwork for Zenith (Erata Remix), with a figure on a dark beach." loading="lazy">
-              <span class="work-arrow" aria-hidden="true"><svg class="icon"><use href="#i-up-right"></use></svg></span>
+        <div class="republic-grid">
+          <div class="republic-text" data-rp-box>
+            <div class="republic-story" lang="en" dir="ltr">
+              <p class="republic-lede reveal" data-reveal>A future where every voice can be heard.</p>
+              <p class="republic-body reveal" data-reveal style="--delay: .06s">On 29 October 1923, Mustafa Kemal Atatürk imagined a country where the future would belong to its people. Where knowledge, freedom, culture and art could flourish. With the founding of the Republic, he helped open a new chapter in which generations could learn, create, question and express themselves without limits.</p>
+              <p class="republic-body reveal" data-reveal>He understood that a nation’s voice lives not only in its history, but also in its art. He championed the development of music education and the institutions that would give future generations of artists the opportunity to find their own voices.</p>
+              <p class="republic-body reveal" data-reveal>A century later, that vision continues to resonate.</p>
+              <p class="republic-body reveal" data-reveal>Every melody we write, every rhythm we create, every stage we step onto carries a little of that legacy. Artists like Erata are part of a generation that can explore, experiment and make its voice heard because a path was opened long before us. <span class="republic-torch">They (Erata and other artists) walk towards the darkness and the unknown, carrying in their hands the torches lit by Atatürk.</span></p>
+              <p class="republic-body reveal" data-reveal>Without that beginning, our music might never have found its way into the world.</p>
+              <p class="republic-body reveal" data-reveal>Today, we celebrate not only the founding of a Republic, but the freedom to imagine, create and be heard.</p>
+              <p class="republic-body republic-greeting reveal" data-reveal>Happy 29 October Republic Day!</p>
             </div>
-            <div class="work-meta"><span>01 / Remix</span><span>2026</span></div>
-            <h3>Zenith <em>(Erata Remix)</em></h3>
-            <p>for Mefjus &amp; flowanastasia</p>
-          </a>
 
-          <a class="work reveal" data-reveal href="https://soundcloud.com/erataofficial/sets/splitfromthepast" target="_blank" rel="noopener">
-            <div class="work-media">
-              <img src="assets/img/covers/split-900.webp" width="900" height="900" alt="Cover artwork for Split From The Past: a monochrome ring and dot." loading="lazy">
-              <span class="work-arrow" aria-hidden="true"><svg class="icon"><use href="#i-up-right"></use></svg></span>
-            </div>
-            <div class="work-meta"><span>02 / Album</span><span>2025</span></div>
-            <h3>Split From The Past</h3>
-            <p>Twelve tracks of experimental bass</p>
-          </a>
+            <ol class="republic-timeline reveal" data-reveal style="--delay: .1s">
+              <li><time>1919 – 1922</time><span data-rp="t1">War of Independence</span></li>
+              <li><time datetime="1922-11-01">01.11.1922</time><span data-rp="t2">The sultanate is abolished</span></li>
+              <li><time datetime="1923-10-29">29.10.1923</time><span data-rp="t3">The Republic is proclaimed</span></li>
+            </ol>
+          </div>
 
-          <a class="work reveal" data-reveal href="https://open.spotify.com/track/1kYfz9lYYsDMKZmuREW4pQ" target="_blank" rel="noopener">
-            <div class="work-media">
-              <img src="assets/img/covers/synesthete-900.webp" width="900" height="900" alt="Cover artwork for Synesthete: a rain-soaked red street scene." loading="lazy">
-              <span class="work-arrow" aria-hidden="true"><svg class="icon"><use href="#i-up-right"></use></svg></span>
+          <figure class="republic-figure reveal" data-reveal style="--delay: .08s">
+            <div class="republic-photo">
+              <img src="assets/img/ataturk.jpg" width="1000" height="1335" alt="Portrait of Mustafa Kemal Atatürk, founder and first President of the Republic of Türkiye." loading="lazy">
             </div>
-            <div class="work-meta"><span>03 / Single</span><span>2024</span></div>
-            <h3>Synesthete</h3>
-            <p>Rebel Music</p>
-          </a>
-
-          <a class="work reveal" data-reveal href="https://soundcloud.com/erataofficial/theportalist" target="_blank" rel="noopener">
-            <div class="work-media">
-              <img src="assets/img/covers/portalist-900.webp" width="900" height="900" alt="Cover artwork for The Portalist: a red moon over a gothic landscape." loading="lazy">
-              <span class="work-arrow" aria-hidden="true"><svg class="icon"><use href="#i-up-right"></use></svg></span>
-            </div>
-            <div class="work-meta"><span>04 / Single</span><span>2024</span></div>
-            <h3>The Portalist</h3>
-            <p>Full Flex Audio</p>
-          </a>
-
-          <a class="work reveal" data-reveal href="https://soundcloud.com/erataofficial/sets/born-with-light-ep" target="_blank" rel="noopener">
-            <div class="work-media">
-              <img src="assets/img/covers/born-with-light-900.webp" width="900" height="900" alt="Cover artwork for the Born With Light EP: a pale figure in freefall." loading="lazy">
-              <span class="work-arrow" aria-hidden="true"><svg class="icon"><use href="#i-up-right"></use></svg></span>
-            </div>
-            <div class="work-meta"><span>05 / EP</span><span>2023</span></div>
-            <h3>Born With Light</h3>
-            <p>Two tracks</p>
-          </a>
-
-          <a class="work reveal" data-reveal href="https://soundcloud.com/erataofficial/artosmsdreamdiaries" target="_blank" rel="noopener">
-            <div class="work-media">
-              <img src="assets/img/covers/artosm-900.webp" width="900" height="900" alt="Cover artwork for Artosm's Dream Diaries: a glowing violet sigil." loading="lazy">
-              <span class="work-arrow" aria-hidden="true"><svg class="icon"><use href="#i-up-right"></use></svg></span>
-            </div>
-            <div class="work-meta"><span>06 / Compilation</span><span>2026</span></div>
-            <h3>Artosm's Dream Diaries</h3>
-            <p>Turkstep: Baskı I</p>
-          </a>
+            <figcaption><span>Mustafa Kemal Atatürk</span><span>1881 – 1938</span></figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -961,7 +928,9 @@
   <div class="visually-hidden" id="sc-host" aria-hidden="true"></div>
 
   <script src="assets/js/data.js" defer></script>
-  <script src="assets/js/app.js" defer></script>
+  <script src="assets/js/republic.js?v=20261030" defer></script>
+  <script src="assets/js/app.js?v=20261030" defer></script>
+  <script src="assets/js/nav-pulse.js?v=20261030b" defer></script>
   <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "e6e62ef678d14e0dbda54aafbf1629a2"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

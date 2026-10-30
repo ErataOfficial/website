@@ -2987,3 +2987,353 @@ html.no-js .site-head {
     transition: opacity 0.6s ease;
   }
 }
+
+/* 29 October — waving Turkish flag beside the logo --------------------------
+   Lives inside .brand so it travels, scales and docks with the logo. The wave is
+   drawn on a <canvas> at the flag's real pixel size (app.js), so it stays smooth
+   and gap-free at every size. The canvas is taller than the flag to leave room
+   for the wave. Revealed by app.js. */
+
+.flag {
+  position: absolute;
+  top: 8%;
+  left: 114%;
+  width: 46%;
+  aspect-ratio: 3 / 2;
+  cursor: help;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flag[hidden] { display: none; }
+
+.flag canvas {
+  position: absolute;
+  top: -14%;
+  left: 0;
+  width: 100%;
+  height: 128%;
+  display: block;
+  pointer-events: none;
+}
+
+.flag:focus-visible {
+  outline: 1px solid var(--accent-on-dark);
+  outline-offset: 4px;
+}
+
+.flag-tip {
+  position: fixed;
+  z-index: 300;
+  max-width: min(86vw, 22rem);
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.flag-tip.is-on {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flag-tip { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .flag {
+    width: 72%;
+    left: 108%;
+    top: 4%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   29 October / Republic Day (replaces Selected works)
+   -------------------------------------------------------------------------- */
+
+.republic-kicker {
+  font-weight: 400;
+}
+
+.republic-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 2.5rem);
+  align-items: start;
+}
+
+.republic-text {
+  grid-column: 3 / span 5;
+}
+
+.republic-figure {
+  grid-column: 9 / span 4;
+  margin: 0;
+}
+
+.republic-grid.no-photo .republic-text {
+  grid-column: 3 / span 7;
+}
+
+.republic-lede {
+  display: flow-root;
+  max-width: 11.4em;
+  font-size: clamp(1.9rem, 3vw, 2.9rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.republic-body {
+  max-width: 52ch;
+  margin-top: 1.6rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+
+/* Opening line: newspaper-style drop cap on the "A" (spans the two lines of the sentence) */
+.republic-lede::first-letter {
+  float: left;
+  padding: 0.04em 0.08em 0 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 2.75em;
+  font-weight: 400;
+  line-height: 0.8;
+  letter-spacing: 0;
+}
+
+.republic-body + .republic-body {
+  margin-top: 1.1rem;
+}
+
+/* The line about the torches, in red */
+.republic-torch {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.republic-greeting {
+  margin-top: 1.6rem;
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.republic-body.republic-greeting {
+  margin-top: 1.6rem;
+}
+
+.republic-timeline {
+  margin-top: clamp(2rem, 4vw, 3.25rem);
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.republic-timeline li {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.republic-timeline time {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.republic-photo {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.republic-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(11, 11, 10, 0.09);
+  pointer-events: none;
+}
+
+.republic-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+  filter: grayscale(1) contrast(1.04);
+}
+
+.republic-figure figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.republic-figure.is-missing {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .republic-figure {
+    position: sticky;
+    top: 7.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .republic-text,
+  .republic-grid.no-photo .republic-text {
+    grid-column: 1 / -1;
+  }
+
+  .republic-figure {
+    grid-column: 1 / -1;
+    max-width: 26rem;
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .republic-timeline li {
+    grid-template-columns: 7rem minmax(0, 1fr);
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   29.10 nav link: breathing + periodic flash, and the flag rails
+   -------------------------------------------------------------------------- */
+
+.site-head {
+  --rp-red: #e30a17;
+  --nav-base: var(--ink);
+}
+
+.site-head.is-dark {
+  --nav-base: var(--paper);
+}
+
+/* Normal state is steady Turkish red. app.js adds .is-pulsing until the visitor
+   has spent about 10 seconds in the 29.10 section. */
+.site-nav a[href="#republic"] {
+  color: var(--rp-red);
+  transition: color 0.7s ease, text-shadow 0.7s ease;
+}
+
+.site-nav a[href="#republic"].is-pulsing {
+  animation: rp-breathe 11.5s ease-in-out infinite;
+}
+
+@keyframes rp-breathe {
+  0.0% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  11.304% { color: var(--rp-red); text-shadow: 0 0 12px rgba(227,10,23,.55); }
+  22.609% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  33.913% { color: var(--rp-red); text-shadow: 0 0 12px rgba(227,10,23,.55); }
+  45.217% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  56.522% { color: var(--rp-red); text-shadow: 0 0 12px rgba(227,10,23,.55); }
+  67.826% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  70.0% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  72.174% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  73.913% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  75.652% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  77.043% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  78.435% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  79.565% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  80.696% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  81.565% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  82.435% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  83.13% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  83.826% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  84.435% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  85.043% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  85.652% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  86.261% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  86.87% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  87.478% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  88.087% { color: var(--rp-red); text-shadow: 0 0 16px rgba(227,10,23,.95), 0 0 4px rgba(227,10,23,.8); }
+  88.696% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+  100.0% { color: var(--nav-base); text-shadow: 0 0 0 rgba(227,10,23,0); }
+}
+
+/* Flag rails: red strips on both edges of the 29.10 section, flags marching down */
+
+.republic {
+  --rail-w: clamp(24px, calc(var(--gutter) - 12px), 40px);
+  --tile: calc(var(--rail-w) * 1040 / 680);
+  padding-right: max(var(--gutter), calc(var(--rail-w) + 12px));
+  padding-left: max(var(--gutter), calc(var(--rail-w) + 12px));
+}
+
+.republic-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  width: var(--rail-w);
+  overflow: hidden;
+  background: #e30a17;
+  pointer-events: none;
+}
+
+.republic-rail--l {
+  left: 0;
+}
+
+.republic-rail--r {
+  right: 0;
+}
+
+.rail-track {
+  position: absolute;
+  top: calc(var(--tile) * -1);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: url("../img/flag-tr-v.svg") 0 0 / 100% auto repeat-y;
+  animation: rail-march 2.4s linear infinite;
+  will-change: transform;
+}
+
+.republic-rail--r .rail-track {
+  animation-delay: -1.2s;
+}
+
+.js .republic:not(.is-live) .rail-track {
+  animation-play-state: paused;
+}
+
+@keyframes rail-march {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, var(--tile), 0); }
+}

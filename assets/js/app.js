@@ -160,6 +160,9 @@
     return Number.isFinite(probe) ? probe : 0;
   }
 
+  // Effective on-screen scale of the logo (1 when docked); the flag inside it reads this.
+  let brandScale = 1;
+
   function measureBrandMorph() {
     measureDarkRanges();
     lastP = -1;
@@ -226,6 +229,7 @@
     // Docked: render at the real bar size with whole-pixel placement (crisp);
     // otherwise keep the big box and shrink it with a transform while it travels.
     const dockedNow = p >= 0.985;
+    brandScale = dockedNow ? 1 : scale;
     if (dockedNow) {
       const endW = morph.baseW * morph.s1;
       const endH = morph.baseH * morph.s1;
@@ -982,6 +986,274 @@
     window.clearTimeout(tickerResizeTimer);
     tickerResizeTimer = window.setTimeout(buildTicker, 150);
   });
+
+  /* 29 October — Republic Day flag beside the logo --------------------------
+     FLAG_MODE: "always" keeps the flag up all year, "oct29" shows it only from
+     26 Oct to 1 Nov, "off" hides it. Add ?flag=1 or ?flag=0 to the URL to
+     preview either way. The hover / tap message follows the visitor's browser
+     language and falls back to English. */
+  const FLAG_MODE = "always";
+
+  const FLAG_TEXT = {
+    tr: "29 Ekim Cumhuriyet Bayramı",
+    en: "29 October – Republic Day",
+    de: "29. Oktober – Tag der Republik",
+    fr: "29 octobre – Fête de la République",
+    es: "29 de octubre – Día de la República",
+    it: "29 ottobre – Giorno della Repubblica",
+    pt: "29 de outubro – Dia da República",
+    nl: "29 oktober – Dag van de Republiek",
+    sv: "29 oktober – Republikens dag",
+    da: "29. oktober – Republikkens dag",
+    pl: "29 października – Dzień Republiki",
+    cs: "29. října – Den republiky",
+    ro: "29 octombrie – Ziua Republicii",
+    hu: "Október 29. – A Köztársaság napja",
+    el: "29 Οκτωβρίου – Ημέρα της Δημοκρατίας",
+    ru: "29 октября – День Республики",
+    uk: "29 жовтня – День Республіки",
+    az: "29 Oktyabr – Cümhuriyyət Günü",
+    ar: "29 أكتوبر – عيد الجمهورية",
+    fa: "۲۹ اکتبر – روز جمهوری",
+    hi: "29 अक्टूबर – गणतंत्र दिवस",
+    ja: "10月29日 – 共和国記念日",
+    ko: "10월 29일 – 공화국 기념일",
+    zh: "10月29日 – 共和国日"
+  };
+
+  const flag = $("#flag-tr");
+
+  function flagShouldShow() {
+    const param = new URLSearchParams(window.location.search).get("flag");
+    if (param === "1") return true;
+    if (param === "0") return false;
+    if (FLAG_MODE === "off") return false;
+    if (FLAG_MODE === "oct29") {
+      const now = new Date();
+      const m = now.getMonth() + 1;
+      const d = now.getDate();
+      return (m === 10 && d >= 26) || (m === 11 && d <= 1);
+    }
+    return true;
+  }
+
+  function flagLanguage() {
+    const list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
+    for (const tag of list) {
+      const code = String(tag).toLowerCase().split("-")[0];
+      if (FLAG_TEXT[code]) return code;
+    }
+    return "en";
+  }
+
+  if (flag && flagShouldShow()) {
+    const lang = flagLanguage();
+    const message = FLAG_TEXT[lang];
+
+    /* The flag is painted on a canvas sized to its real device pixels. The flag
+       artwork is rasterised once into `art`; every frame copies it column by
+       column, shifted up and down along a travelling sine wave, with a soft
+       light / shadow band so the cloth looks folded. */
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("aria-hidden", "true");
+    flag.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    /* The flag is small (about 23 x 15 px when docked), so it is drawn at 2x or
+       4x size and averaged down by exact halves. That keeps the edges, the
+       crescent and the star anti-aliased instead of stair-stepped. */
+    const art = document.createElement("canvas");
+    const artCtx = art.getContext("2d");
+    const buf = document.createElement("canvas");
+    const bufCtx = buf.getContext("2d");
+    const mid = document.createElement("canvas");
+    const midCtx = mid.getContext("2d");
+    const artImage = new Image();
+    const PAD = 0.14;
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let cw = 0;
+    let ch = 0;
+    let fh = 0;
+    let ss = 1;
+    let fitScale = 1;
+    let ready = false;
+    let rafId = 0;
+
+    const paintArt = () => {
+      if (!cw || !artImage.complete || !artImage.naturalWidth) return;
+      artCtx.clearRect(0, 0, art.width, art.height);
+      artCtx.drawImage(artImage, 0, 0, art.width, art.height);
+      ready = true;
+    };
+
+    /* Docked, the logo sits at its real size, so the bitmap is placed exactly on
+       the device-pixel grid and the browser does not resample it. While the logo
+       travels up it is scaled by a transform, so the CSS percentages apply. */
+    const alignCanvas = (dpr, eff) => {
+      if (Math.abs(eff - 1) > 0.001) {
+        canvas.style.left = "";
+        canvas.style.top = "";
+        canvas.style.width = "";
+        canvas.style.height = "";
+        return;
+      }
+      const rect = flag.getBoundingClientRect();
+      const left = Math.round(rect.left * dpr) / dpr;
+      const top = Math.round((rect.top - (fh * PAD) / dpr) * dpr) / dpr;
+      canvas.style.left = `${left - rect.left}px`;
+      canvas.style.top = `${top - rect.top}px`;
+      canvas.style.width = `${cw / dpr}px`;
+      canvas.style.height = `${ch / dpr}px`;
+    };
+
+    const fit = () => {
+      const w = flag.offsetWidth;
+      const h = flag.offsetHeight;
+      if (!w || !h || !ctx) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      /* The flag is laid out at the big hero size and shrunk with the logo; size
+         the bitmap for what is really on screen. */
+      const eff = brandScale > 0 ? brandScale : 1;
+      fitScale = eff;
+      const nw = Math.max(2, Math.round(w * eff * dpr));
+      const nfh = Math.max(2, Math.round(h * eff * dpr));
+      const nh = Math.round(nfh * (1 + PAD * 2));
+      if (nw !== cw || nh !== ch) {
+        cw = nw;
+        ch = nh;
+        fh = nfh;
+        ss = nfh < 90 ? 4 : nfh < 200 ? 2 : 1;
+        canvas.width = cw;
+        canvas.height = ch;
+        art.width = cw * ss;
+        art.height = fh * ss;
+        buf.width = cw * ss;
+        buf.height = ch * ss;
+        if (ss === 4) {
+          mid.width = cw * 2;
+          mid.height = ch * 2;
+        }
+        ready = false;
+        paintArt();
+        alignCanvas(dpr, eff);
+        if (reduceMotion) draw(600);
+      } else {
+        alignCanvas(dpr, eff);
+      }
+    };
+
+    function draw(now) {
+      if (!ready || !ctx) return;
+      const t = now / 1000;
+      const bw = cw * ss;
+      const bh = ch * ss;
+      const fhS = fh * ss;
+      const pad = fhS * PAD;
+      const amp = fhS * 0.078;
+      bufCtx.clearRect(0, 0, bw, bh);
+      let tint = "";
+      for (let x = 0; x < bw; x += 1) {
+        const u = x / bw;
+        const phase = u * Math.PI * 2 * 1.15 - t * Math.PI * 2 / 2.6;
+        const y = pad + Math.sin(phase) * amp * (0.12 + 0.88 * u);
+        bufCtx.globalAlpha = 1;
+        bufCtx.drawImage(art, x, 0, 2, fhS, x, y, 2, fhS);
+        const shade = Math.cos(phase) * (0.1 + 0.2 * u);
+        const colour = shade > 0 ? "#000" : "#fff";
+        if (colour !== tint) {
+          bufCtx.fillStyle = colour;
+          tint = colour;
+        }
+        bufCtx.globalAlpha = Math.min(Math.abs(shade) * (shade > 0 ? 0.9 : 0.4), 0.4);
+        bufCtx.fillRect(x, y, 2, fhS);
+      }
+      bufCtx.globalAlpha = 1;
+
+      ctx.clearRect(0, 0, cw, ch);
+      if (ss === 4) {
+        midCtx.clearRect(0, 0, mid.width, mid.height);
+        midCtx.drawImage(buf, 0, 0, bw, bh, 0, 0, mid.width, mid.height);
+        ctx.drawImage(mid, 0, 0, mid.width, mid.height, 0, 0, cw, ch);
+      } else {
+        ctx.drawImage(buf, 0, 0, bw, bh, 0, 0, cw, ch);
+      }
+    }
+
+    const frame = (now) => {
+      if (Math.abs(brandScale - fitScale) > fitScale * 0.12) fit();
+      draw(now);
+      rafId = window.requestAnimationFrame(frame);
+    };
+
+    artImage.addEventListener("load", () => {
+      paintArt();
+      if (reduceMotion) draw(600);
+    });
+    artImage.src = "assets/img/flag-tr.svg";
+
+    flag.setAttribute("role", "img");
+    flag.setAttribute("aria-label", message);
+    flag.setAttribute("tabindex", "0");
+    flag.hidden = false;
+    fit();
+    if ("ResizeObserver" in window) new ResizeObserver(fit).observe(flag);
+    window.addEventListener("resize", fit);
+    if (!reduceMotion) rafId = window.requestAnimationFrame(frame);
+
+    const tip = document.createElement("div");
+    tip.className = "flag-tip";
+    tip.setAttribute("aria-hidden", "true");
+    tip.lang = lang;
+    tip.dir = lang === "ar" || lang === "fa" ? "rtl" : "ltr";
+    tip.textContent = message;
+    document.body.appendChild(tip);
+
+    let tipTimer = 0;
+    let tipScrollY = 0;
+
+    const showTip = (autoHide) => {
+      window.clearTimeout(tipTimer);
+      tipScrollY = window.scrollY;
+      const rect = flag.getBoundingClientRect();
+      tip.classList.add("is-on");
+      const w = tip.offsetWidth;
+      const h = tip.offsetHeight;
+      const gap = 12;
+      let left;
+      let top = clamp(rect.top + rect.height / 2 - h / 2, 8, window.innerHeight - h - 8);
+      if (window.innerWidth < 720) {
+        left = clamp(rect.left + rect.width / 2 - w / 2, 8, window.innerWidth - w - 8);
+        top = Math.max(rect.bottom + gap, siteHead ? siteHead.getBoundingClientRect().bottom + 8 : 0);
+      } else if (rect.right + gap + w <= window.innerWidth - 8) {
+        left = rect.right + gap;
+      } else if (rect.left - gap - w >= 8) {
+        left = rect.left - gap - w;
+      } else {
+        left = clamp(rect.left + rect.width / 2 - w / 2, 8, window.innerWidth - w - 8);
+        top = rect.bottom + gap;
+      }
+      tip.style.left = `${left}px`;
+      tip.style.top = `${top}px`;
+      if (autoHide) tipTimer = window.setTimeout(hideTip, 3200);
+    };
+
+    function hideTip() {
+      window.clearTimeout(tipTimer);
+      tip.classList.remove("is-on");
+    }
+
+    flag.addEventListener("pointerenter", (event) => { if (event.pointerType === "mouse") showTip(false); });
+    flag.addEventListener("pointerleave", (event) => { if (event.pointerType === "mouse") hideTip(); });
+    flag.addEventListener("focus", () => showTip(false));
+    flag.addEventListener("blur", hideTip);
+    flag.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      showTip(true);
+    });
+    window.addEventListener("scroll", () => {
+      if (Math.abs(window.scrollY - tipScrollY) > 40) hideTip();
+    }, { passive: true });
+  }
 
   /* Remove the initial js flag after the first paint if needed for CSS-only
      fallbacks. Kept intentionally: the reveal classes are only hidden when
