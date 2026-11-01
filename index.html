@@ -4,6 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>document.documentElement.classList.replace('no-js', 'js');</script>
+  <script>
+    /* Her yenilemede (refresh) site ana sayfadan (en üstten) açılsın:
+       tarayıcının kaydırma konumunu hatırlamasını kapat, #bölüm kısmını temizle. */
+    (function () {
+      try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+      var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+      var isReload = nav.type === 'reload' || (performance.navigation && performance.navigation.type === 1);
+      if (!isReload) return;
+      if (location.hash) {
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      }
+      var top = function () { window.scrollTo(0, 0); };
+      top();
+      window.addEventListener('DOMContentLoaded', top);
+      window.addEventListener('load', function () { top(); setTimeout(top, 60); });
+    })();
+    /* Geri/ileri önbelleğinden (bfcache) dönülürse de en üste git */
+    window.addEventListener('pageshow', function (e) { if (e.persisted) window.scrollTo(0, 0); });
+  </script>
 
   <title>Erata | Official Website</title>
   <meta name="description" content="The official home of Erata (Yiğit Erata), a genreless electronic / bass music project from Ankara, crossing cinematic, complextro and drum & bass. Discography, selected works, and Circle In The Flow.">
